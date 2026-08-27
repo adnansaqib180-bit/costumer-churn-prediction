@@ -25,5 +25,8 @@ for col in to_clean:
 
 
 df['Churn'] = df['Churn'].map({'Yes':1,'No':0})
-x = df.drop('Churn',axis=1)
-y= df['Churn']
+
+
+print(df.head())
+print(df.info())
+
