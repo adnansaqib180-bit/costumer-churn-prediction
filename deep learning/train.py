@@ -5,9 +5,7 @@ from keras import Sequential
 from keras.layers import Dense
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.utils.class_weight import compute_class_weight
-import numpy as np
-
+from imblearn.over_sampling import SMOTE
 
 df = pd.read_csv('costumer-churn-prediction/clasic machine learning/Data.csv')
 
@@ -15,8 +13,9 @@ print(df.head())
 print(df.columns)
 print(df.isnull().sum())
 
-df = df.drop(columns=['gender','PaperlessBilling','customerID','InternetService','OnlineSecurity','OnlineBackup','DeviceProtection','TechSupport','StreamingTV','StreamingMovies'])
+df = df.drop(columns=['PaperlessBilling','customerID','InternetService','OnlineSecurity','OnlineBackup','DeviceProtection'])
 
+df['gender'] = df['gender'].map({'Male':1,'Female':0})
 df['TotalCharges'] = pd.to_numeric(df['TotalCharges'], errors='coerce')
 df = df.dropna()
 df['MultipleLines'] = df['MultipleLines'].map({'No internet service': 'No','No':'No','Yes':'Yes','No phone service':'No'})
@@ -27,8 +26,9 @@ df['Contract'] = df['Contract'].map({'Month-to-month':0,'One year':1,'Two year':
 df['Churn'] = df['Churn'].map({'Yes':1,'No':0})
 
 df = pd.get_dummies(data=df,columns=['PaymentMethod'],drop_first=True,dtype=int)  
-print(df.head())
-print(df.info())
+same_columns = ['TechSupport','StreamingMovies','StreamingTV']
+for col in same_columns:
+    df[col] = df[col].map({'Yes':1,'No':0,'No internet service':0})
 x = df.drop(columns= ['Churn'])
 y = df['Churn']
 
@@ -38,12 +38,13 @@ scaler =  StandardScaler()
 x_train = scaler.fit_transform(x)
 x_test = scaler.transform(x_test)
 
+smote = SMOTE(random_state=42)
+x_train,y_train = smote.fit_resample(x_train,y_train)
+
 model = Sequential()
-model.add(Dense(12,activation='relu',input_dim=12))
-model.add(Dense(6,activation='relu'))
+model.add(Dense(16,activation='relu',input_dim=16))
 model.add(Dense(8,activation='relu'))
 model.add(Dense(4,activation='relu'))
-model.add(Dense(2,activation='relu'))
 model.add(Dense(1,activation='sigmoid'))
 
 print(model.summary())
