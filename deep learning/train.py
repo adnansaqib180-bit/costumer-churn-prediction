@@ -29,13 +29,13 @@ from sklearn.model_selection import train_test_split
 x_train,x_test,y_train,y_test = train_test_split(x,y,random_state=42)
 
 model = Sequential()
-model.add(Dense(5,activation='relu'))
+model.add(Dense(5,activation='relu',input_dim=13))
 model.add(Dense(2,activation='relu'))
 model.add(Dense(1,activation='sigmoid'))
 
 print(model.summary())
 
-model.compile(loss='binarycrossantropy',optimizer='Adam',metrics=['accuracy'])
+model.compile(loss='binary_crossantropy',optimizer='Adam',metrics=['accuracy'])
 
 history = model.fit(x_train,y_train,epochs=7,validation_split=.2)
 
