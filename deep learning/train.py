@@ -9,24 +9,18 @@ print(df.head())
 print(df.columns)
 print(df.isnull().sum())
 
-df = df.drop(columns=['gender','customerID'])
+df = df.drop(columns=['gender','PaperlessBilling','customerID','InternetService','OnlineSecurity','OnlineBackup','DeviceProtection','TechSupport','StreamingTV','StreamingMovies'])
 
 df['TotalCharges'] = pd.to_numeric(df['TotalCharges'], errors='coerce')
 numeric_columns = ['MonthlyCharges','tenure','TotalCharges']
 
-un_cleaned_catagorical = []
-for col in df.columns:
-    if df[col].dtype == object or df[col].dtype == 'string':
-        if df[col].nunique() > 2:
-            un_cleaned_catagorical.append(col)
-to_clean = ['MultipleLines','OnlineSecurity','OnlineBackup','DeviceProtection','TechSupport','StreamingTV','StreamingMovies']
-for col in to_clean:
-    df[col] = df[col].map({'No internet service': 'No','No':'No','Yes':'Yes','No phone service':'No'})
-
 
 df['Churn'] = df['Churn'].map({'Yes':1,'No':0})
 
-
+df['MultipleLines'] = df['MultipleLines'].map({'No internet service': 'No','No':'No','Yes':'Yes','No phone service':'No'})
+    
 print(df.head())
 print(df.info())
+for col in df.columns:
+    print(df[col].value_counts)
 
