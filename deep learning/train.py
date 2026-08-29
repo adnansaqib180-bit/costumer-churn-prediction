@@ -5,6 +5,7 @@ from keras import Sequential
 from keras.layers import Dense
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+# from imblearn.over_sampling import SMOTE 
 
 df = pd.read_csv('costumer-churn-prediction/clasic machine learning/Data.csv')
 print(df.head())
@@ -36,15 +37,16 @@ scaler =  StandardScaler()
 x_train = scaler.fit_transform(x)
 x_test = scaler.transform(x_test)
 
+# smote = SMOTE()
+# x_train,y_train = smote.fit_resample(x_train,y_train)
+
+#  =============== due to not good result i did'nt keep smote =========
 
 model = Sequential()
-model.add(Dense(256,activation='relu',input_dim=16))
-model.add(Dense(128,activation='relu'))
-model.add(Dense(64,activation='relu'))
-model.add(Dense(32,activation='relu'))
+model.add(Dense(20,activation='relu',input_dim=16))
 model.add(Dense(16,activation='relu'))
 model.add(Dense(8,activation='relu'))
-model.add(Dense(4,activation='relu'))
+
 model.add(Dense(2,activation='relu'))
 model.add(Dense(1,activation='sigmoid'))
 
