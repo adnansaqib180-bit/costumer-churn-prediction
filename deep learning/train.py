@@ -46,7 +46,6 @@ model = Sequential()
 model.add(Dense(20,activation='relu',input_dim=16))
 model.add(Dense(16,activation='relu'))
 model.add(Dense(8,activation='relu'))
-
 model.add(Dense(2,activation='relu'))
 model.add(Dense(1,activation='sigmoid'))
 
