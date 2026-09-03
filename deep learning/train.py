@@ -83,3 +83,7 @@ plt.legend()
 
 plt.tight_layout()
 plt.show()
+
+#saving the model
+
+model.save('trained_nural_network.keras')
