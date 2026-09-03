@@ -87,3 +87,4 @@ plt.show()
 #saving the model
 
 model.save('trained_nural_network.keras')
+print('model saved')
