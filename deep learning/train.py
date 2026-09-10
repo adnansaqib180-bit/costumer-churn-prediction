@@ -54,12 +54,12 @@ def build_model(hp):
     activation = hp.Choice('activation',values=['tanh','sigmoid','relu'])
     num_layers = hp.Int('layers',min_value=2,max_value=5)
     for i in range (num_layers):
-        if i == 1:
-            model.add(Dense(units=nodes,activation=activation,input_shape=21))
+        if i == 0:
+            model.add(Dense(units=nodes,activation=activation,input_shape=(16,)))
         else:
             model.add(Dense(units=nodes,activation=activation))
-        model.add(Dense(1,activation='sigmoid'))          
-        model.compile(optimizer=optimizer,loss='binary_crossentropy',metrics=['f1_score'])
+    model.add(Dense(1,activation='sigmoid'))          
+    model.compile(optimizer=optimizer,loss='binary_crossentropy',metrics=['f1_score'])
     return model
 tuner = kt.RandomSearch(build_model,objective='val_f1_score',max_trials=5)
 tuner.search(x_train,y_train,epochs=10,validation_data=(x_test,y_test))
