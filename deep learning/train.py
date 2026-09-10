@@ -6,6 +6,7 @@ from keras.layers import Dense
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 # from imblearn.over_sampling import SMOTE 
+import keras_tuner as kt 
 
 df = pd.read_csv('costumer-churn-prediction/clasic machine learning/Data.csv')
 print(df.head())
@@ -42,19 +43,20 @@ x_test = scaler.transform(x_test)
 
 #  =============== due to not good result i did'nt keep smote =========
 
-model = Sequential()
-model.add(Dense(20,activation='relu',input_dim=16))
-model.add(Dense(16,activation='relu'))
-model.add(Dense(8,activation='relu'))
-model.add(Dense(2,activation='relu'))
-model.add(Dense(1,activation='sigmoid'))
-
+def build_model(hp):
+    model = Sequential()
+    nodes = hp.Int('nodes',min_value= 20,max_value=128,steps= 8)
+    optimizer = hp.choice('optimizer',values=['Adam','sgd'])
+    activation = hp.Choice('activation',values=['tanh','sigmoid','relu'])
+    for i in range (hp.Int('layers',min_value=2,max_value=10)):
+        model.add(Dense(units=nodes,activation=activation))
+        model.compile(optimizer=optimizer,loss='binary_crossentropy',metrics=['accuracy'])
+    return model
+tuner = kt.RandomSearch(build_model,objective='val_accuracy',max_trials=5)
+tuner.search(x_train,y_train,epochs=10,validation_data=(x_test,y_test))
+print(tuner.get_best_hyperparameters()[0].values)
+model = tuner.get_best_models(num_models=1)[0]
 print(model.summary())
-
-
-model.compile(loss='binary_crossentropy',optimizer='Adam',metrics=['accuracy'])
-
-history = model.fit(x_train,y_train,epochs=50,validation_split=.2)
 
 probabilities = model.predict(x_test)
 threshold = 0.45
