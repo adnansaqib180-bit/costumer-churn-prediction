@@ -20,12 +20,17 @@ df = df.drop(columns=['PaperlessBilling','customerID','InternetService','OnlineS
 df['gender'] = df['gender'].map({'Male':1,'Female':0})
 df['TotalCharges'] = pd.to_numeric(df['TotalCharges'], errors='coerce')
 df = df.dropna()
+
+
 df['MultipleLines'] = df['MultipleLines'].map({'No internet service': 'No','No':'No','Yes':'Yes','No phone service':'No'})
 yes_no_columns = ['Partner','Dependents','PhoneService','MultipleLines']
 for col in yes_no_columns:
     df[col] = df[col].map({'Yes':1,'No':0})
+
+
 df['Contract'] = df['Contract'].map({'Month-to-month':0,'One year':1,'Two year':2})
 df['Churn'] = df['Churn'].map({'Yes':1,'No':0})
+
 
 df = pd.get_dummies(data=df,columns=['PaymentMethod'],drop_first=True,dtype=int)  
 same_columns = ['TechSupport','StreamingMovies','StreamingTV']
@@ -34,19 +39,24 @@ for col in same_columns:
 x = df.drop(columns= ['Churn'])
 y = df['Churn']
 
+
 print(df.head())
 print(df.info())
 
+
 x,x_test,y_train,y_test = train_test_split(x,y,random_state=42)
+
 
 scaler =  StandardScaler()
 x_train = scaler.fit_transform(x)
 x_test = scaler.transform(x_test)
 
+
 # smote = SMOTE()
 # x_train,y_train = smote.fit_resample(x_train,y_train)
 
 #  =============== due to not good result i did'nt keep smote =========
+
 
 def build_model(hp):
     model = Sequential()
@@ -63,20 +73,29 @@ def build_model(hp):
     model.add(Dense(1,activation='sigmoid'))          
     model.compile(optimizer=optimizer,loss=loss,metrics=[keras.metrics.F1Score(threshold=0.4, name='f1_score')])
     return model
+
+
+
 tuner = kt.RandomSearch(build_model,objective='val_f1_score',max_trials=10)
 tuner.search(x_train,y_train,epochs=10,validation_data=(x_test,y_test))
+
+
 print(tuner.get_best_hyperparameters()[0].values)
 model = tuner.get_best_models(num_models=1)[0]
 print(model.summary())
+
+
 history = model.fit(x_train,y_train,epochs=500,validation_split = .20)
 probabilities = model.predict(x_test)
 threshold = 0.4
 predictions = (probabilities > threshold).astype(int)
 
+
 print("Confusion Matrix:\n", confusion_matrix(y_test, predictions))
 print("F1 Score:", f1_score(y_test, predictions))
 print("Accuracy Score:", accuracy_score(y_test, predictions))
 print('precion : ',precision_score(y_test, predictions))
+
 
 plt.figure(figsize=(10, 4))
 plt.subplot(1, 2, 1)
@@ -86,6 +105,8 @@ plt.title("Model Loss")
 plt.ylabel("Loss")
 plt.xlabel("Epoch")
 plt.legend()
+
+
 plt.subplot(1, 2, 2)
 plt.plot(history.history["f1_score"], label="Train Accuracy")
 plt.plot(history.history["val_f1_score"], label="Validation Accuracy")
@@ -94,10 +115,11 @@ plt.ylabel("f1_score")
 plt.xlabel("Epoch")
 plt.legend()
 
+
 plt.tight_layout()
 plt.show()
 
 #saving the model
 
-# model.save('trained_nural_network.keras')
-# print('model saved')
+model.save('churn_ann.keras')
+print('model saved')
