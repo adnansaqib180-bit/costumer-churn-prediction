@@ -68,7 +68,7 @@ tuner.search(x_train,y_train,epochs=10,validation_data=(x_test,y_test))
 print(tuner.get_best_hyperparameters()[0].values)
 model = tuner.get_best_models(num_models=1)[0]
 print(model.summary())
-history = model.fit(x_train,y_train,epochs=200,validation_split = .20)
+history = model.fit(x_train,y_train,epochs=500,validation_split = .20)
 probabilities = model.predict(x_test)
 threshold = 0.4
 predictions = (probabilities > threshold).astype(int)
