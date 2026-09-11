@@ -1,5 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import keras 
 from sklearn.metrics import accuracy_score, confusion_matrix, f1_score,precision_score
 from keras import Sequential
 from keras.layers import Dense
@@ -49,26 +50,27 @@ x_test = scaler.transform(x_test)
 
 def build_model(hp):
     model = Sequential()
-    nodes = hp.Int('nodes',min_value= 20,max_value=128,step= 8)
-    optimizer = hp.Choice('optimizer',values=['Adam','sgd'])
-    activation = hp.Choice('activation',values=['tanh','sigmoid','relu'])
-    num_layers = hp.Int('layers',min_value=2,max_value=5)
+    nodes = hp.Int('nodes',min_value= 20,max_value=80,step= 8)
+    optimizer = hp.Choice('optimizer',values=['Adam','sgd','adagrad','nadam'])
+    loss = hp.Choice('loss',values=['hinge','binary_crossentropy'])
+    activation = hp.Choice('activation',values=['tanh','sigmoid','relu','elu'])
+    num_layers = hp.Int('layers',min_value=1,max_value=5)
     for i in range (num_layers):
         if i == 0:
             model.add(Dense(units=nodes,activation=activation,input_shape=(16,)))
         else:
             model.add(Dense(units=nodes,activation=activation))
     model.add(Dense(1,activation='sigmoid'))          
-    model.compile(optimizer=optimizer,loss='binary_crossentropy',metrics=['f1_score'])
+    model.compile(optimizer=optimizer,loss=loss,metrics=[keras.metrics.F1Score(threshold=0.4, name='f1_score')])
     return model
-tuner = kt.RandomSearch(build_model,objective='val_f1_score',max_trials=5)
+tuner = kt.RandomSearch(build_model,objective='val_f1_score',max_trials=10)
 tuner.search(x_train,y_train,epochs=10,validation_data=(x_test,y_test))
 print(tuner.get_best_hyperparameters()[0].values)
 model = tuner.get_best_models(num_models=1)[0]
 print(model.summary())
-history = model.fit(x_train,y_train,epochs=50,validation_split = .24)
+history = model.fit(x_train,y_train,epochs=200,validation_split = .20)
 probabilities = model.predict(x_test)
-threshold = 0.45
+threshold = 0.4
 predictions = (probabilities > threshold).astype(int)
 
 print("Confusion Matrix:\n", confusion_matrix(y_test, predictions))
@@ -88,7 +90,7 @@ plt.subplot(1, 2, 2)
 plt.plot(history.history["f1_score"], label="Train Accuracy")
 plt.plot(history.history["val_f1_score"], label="Validation Accuracy")
 plt.title("Model Accuracy")
-plt.ylabel("Accuracy")
+plt.ylabel("f1_score")
 plt.xlabel("Epoch")
 plt.legend()
 
