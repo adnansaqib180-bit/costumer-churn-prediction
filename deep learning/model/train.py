@@ -1,59 +1,54 @@
-
+import pandas as pd
 if __name__ == '__main__':
-    import pandas as pd
     import matplotlib.pyplot as plt
     import keras 
     from sklearn.metrics import accuracy_score, confusion_matrix, f1_score,precision_score
     from keras import Sequential
     from keras.layers import Dense
-    from sklearn.model_selection import train_test_split
     from sklearn.preprocessing import StandardScaler
     # from imblearn.over_sampling import SMOTE 
     import keras_tuner as kt
-    df = pd.read_csv('costumer-churn-prediction/clasic machine learning/Data.csv')
-    print(df.head())
-    print(df.columns)
-    print(df.isnull().sum())
 
-    df = df.drop(columns=['PaperlessBilling','customerID','InternetService','OnlineSecurity','OnlineBackup','DeviceProtection'])
+df = pd.read_csv('costumer-churn-prediction/clasic machine learning/Data.csv')
 
-    df['gender'] = df['gender'].map({'Male':1,'Female':0})
-    df['TotalCharges'] = pd.to_numeric(df['TotalCharges'], errors='coerce')
-    df = df.dropna()
+df = df.drop(columns=['PaperlessBilling','customerID','InternetService','OnlineSecurity','OnlineBackup','DeviceProtection'])
+
+df['gender'] = df['gender'].map({'Male':1,'Female':0})
+df['TotalCharges'] = pd.to_numeric(df['TotalCharges'], errors='coerce')
+df = df.dropna()
 
 
-    df['MultipleLines'] = df['MultipleLines'].map({'No internet service': 'No','No':'No','Yes':'Yes','No phone service':'No'})
-    yes_no_columns = ['Partner','Dependents','PhoneService','MultipleLines']
-    for col in yes_no_columns:
-        df[col] = df[col].map({'Yes':1,'No':0})
+df['MultipleLines'] = df['MultipleLines'].map({'No internet service': 'No','No':'No','Yes':'Yes','No phone service':'No'})
+yes_no_columns = ['Partner','Dependents','PhoneService','MultipleLines']
+for col in yes_no_columns:
+    df[col] = df[col].map({'Yes':1,'No':0})
 
 
-    df['Contract'] = df['Contract'].map({'Month-to-month':0,'One year':1,'Two year':2})
-    df['Churn'] = df['Churn'].map({'Yes':1,'No':0})
+df['Contract'] = df['Contract'].map({'Month-to-month':0,'One year':1,'Two year':2})
+df['Churn'] = df['Churn'].map({'Yes':1,'No':0})
 
 
-    df = pd.get_dummies(data=df,columns=['PaymentMethod'],drop_first=True,dtype=int)  
-    same_columns = ['TechSupport','StreamingMovies','StreamingTV']
-    for col in same_columns:
-        df[col] = df[col].map({'Yes':1,'No':0,'No internet service':0})
-    x = df.drop(columns= ['Churn'])
-    y = df['Churn']
+df = pd.get_dummies(data=df,columns=['PaymentMethod'],drop_first=True,dtype=int)  
+same_columns = ['TechSupport','StreamingMovies','StreamingTV']
+for col in same_columns:
+    df[col] = df[col].map({'Yes':1,'No':0,'No internet service':0})
+x = df.drop(columns= ['Churn'])
+y = df['Churn']
 
 
-    print(df.head())
-    print(df.info())
-
-
+from sklearn.model_selection import train_test_split
 x,x_test,y_train,y_test = train_test_split(x,y,random_state=42)
 
 if __name__ == '__main__':
+    print(df.head())
+    print(df.info())
     print(x.shape)
     print(x_test.shape)
     print(y_train.shape)
     print(y_test.shape)
-    scaler =  StandardScaler()
-    x_train = scaler.fit_transform(x)
-    x_test = scaler.transform(x_test)
+scaler =  StandardScaler()
+x_train = scaler.fit_transform(x)
+x_test = scaler.transform(x_test)
 
 
 # smote = SMOTE()
