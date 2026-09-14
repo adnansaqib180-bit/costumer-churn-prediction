@@ -4,7 +4,7 @@ if __name__ == '__main__':
     import keras 
     from sklearn.metrics import accuracy_score, confusion_matrix, f1_score,precision_score
     from keras import Sequential
-    from keras.layers import Dense
+    from keras.layers import Dense, Normalization
     from sklearn.preprocessing import StandardScaler
     # from imblearn.over_sampling import SMOTE 
     import keras_tuner as kt
@@ -57,9 +57,11 @@ x_test = scaler.transform(x_test)
 #  =============== due to not good result i did'nt keep smote =========
 
 if __name__ == '__main__':
-
+    normalizer = Normalization()
+    normalizer.adapt(x_train)
     def build_model(hp):
         model = Sequential()
+        model.add(normalizer)
         nodes = hp.Int('nodes',min_value= 20,max_value=80,step= 8)
         optimizer = hp.Choice('optimizer',values=['Adam','sgd','adagrad','nadam'])
         loss = hp.Choice('loss',values=['hinge','binary_crossentropy'])
