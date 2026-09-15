@@ -3,6 +3,7 @@ joblib
 numpy
 pandas
 pydantic
+requests
 scikit-learn
 streamlit
 tensorflow

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+import requests
 import streamlit as st
-from fastapi import HTTPException
 
-from api.main import CustomerChurnInput, predict_ann, predict_ml
+API_BASE_URL = "https://discerning-emotion-production-4278.up.railway.app"
 
 
 st.set_page_config(
@@ -106,7 +106,7 @@ st.markdown(
 )
 
 
-def input_form() -> CustomerChurnInput:
+def input_form() -> dict | None:
     """Render the customer form and return a validated API input object."""
     with st.form("customer_details"):
         st.markdown("### Customer profile")
@@ -170,31 +170,47 @@ def input_form() -> CustomerChurnInput:
     if not submitted:
         return None
 
-    return CustomerChurnInput(
-        gender=gender,
-        SeniorCitizen=senior_citizen == "Yes",
-        Partner=partner,
-        Dependents=dependents,
-        tenure=tenure,
-        PhoneService=phone_service,
-        MultipleLines=multiple_lines,
-        InternetService=internet_service,
-        OnlineSecurity=online_security,
-        OnlineBackup=online_backup,
-        DeviceProtection=device_protection,
-        TechSupport=tech_support,
-        StreamingTV=streaming_tv,
-        StreamingMovies=streaming_movies,
-        Contract=contract,
-        PaperlessBilling=paperless_billing,
-        PaymentMethod=payment_method,
-        MonthlyCharges=monthly_charges,
-        TotalCharges=total_charges,
+    return {
+        "gender": gender,
+        "SeniorCitizen": senior_citizen == "Yes",
+        "Partner": partner,
+        "Dependents": dependents,
+        "tenure": tenure,
+        "PhoneService": phone_service,
+        "MultipleLines": multiple_lines,
+        "InternetService": internet_service,
+        "OnlineSecurity": online_security,
+        "OnlineBackup": online_backup,
+        "DeviceProtection": device_protection,
+        "TechSupport": tech_support,
+        "StreamingTV": streaming_tv,
+        "StreamingMovies": streaming_movies,
+        "Contract": contract,
+        "PaperlessBilling": paperless_billing,
+        "PaymentMethod": payment_method,
+        "MonthlyCharges": monthly_charges,
+        "TotalCharges": total_charges,
+    }
+
+
+def request_prediction(endpoint: str, customer_input: dict) -> dict:
+    response = requests.post(
+        f"{API_BASE_URL}{endpoint}",
+        json=customer_input,
+        timeout=90,
     )
+    if not response.ok:
+        try:
+            detail = response.json().get("detail", response.text)
+        except ValueError:
+            detail = response.text
+        raise RuntimeError(f"API returned {response.status_code}: {detail}")
+    return response.json()
 
 
 st.sidebar.markdown("## CHURN INTELLIGENCE")
 st.sidebar.caption("Customer retention decision workspace")
+st.sidebar.caption(f"Connected to: {API_BASE_URL}")
 selected_model = st.sidebar.radio(
     "Choose prediction engine",
     ["Machine learning", "Deep learning ANN"],
@@ -225,29 +241,29 @@ customer_input = input_form()
 if customer_input is not None:
     with st.spinner(f"Running {selected_model.lower()} analysis..."):
         try:
-            result = (
-                predict_ml(customer_input)
+            result = request_prediction(
+                "/ml-model"
                 if selected_model == "Machine learning"
-                else predict_ann(customer_input)
+                else "/deep-learning-ann",
+                customer_input,
             )
-        except HTTPException as exc:
-            st.error(str(exc.detail))
         except Exception as exc:
             st.error(f"Prediction failed: {exc}")
         else:
-            probability = result.probability
-            risk = "HIGH RISK" if result.prediction else "LOW RISK"
+            prediction = result["prediction"]
+            probability = result.get("probability")
+            risk = "HIGH RISK" if prediction else "LOW RISK"
             st.markdown('<div class="result-card">', unsafe_allow_html=True)
             st.markdown("### Prediction result")
             metric_col, probability_col = st.columns(2)
             with metric_col:
-                st.metric("Churn status", result.label.upper())
-                st.caption(f"{risk}  |  {result.model}")
+                st.metric("Churn status", result["label"].upper())
+                st.caption(f"{risk}  |  {result['model']}")
             with probability_col:
                 if probability is not None:
                     st.metric("Churn probability", f"{probability:.1%}")
                     st.progress(min(max(probability, 0.0), 1.0))
-            if result.prediction:
+            if prediction:
                 st.warning("This customer shows signals associated with churn. Consider a retention offer.")
             else:
                 st.success("This customer currently shows a healthy retention profile.")

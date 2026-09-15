@@ -96,6 +96,10 @@ uvicorn api.main:app --reload
 
 Open the interactive API documentation at [http://localhost:8000/docs](http://localhost:8000/docs).
 
+The deployed API is available at
+[https://discerning-emotion-production-4278.up.railway.app](https://discerning-emotion-production-4278.up.railway.app).
+The Streamlit dashboard sends prediction requests to this public service.
+
 ## Docker
 
 The default container command launches the Streamlit dashboard:
@@ -115,6 +119,9 @@ docker run --rm -p 8000:8000 churn-intelligence `
 ```
 
 Open [http://localhost:8000/docs](http://localhost:8000/docs).
+
+For the deployed service, use
+[https://discerning-emotion-production-4278.up.railway.app/docs](https://discerning-emotion-production-4278.up.railway.app/docs).
 
 > **Note:** TensorFlow is included in `requirements.txt` so the ANN endpoint and ANN option are available in Docker. The image is therefore larger than a machine-learning-only image.
 

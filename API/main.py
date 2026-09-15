@@ -11,8 +11,16 @@ from pydantic import BaseModel, ConfigDict, field_validator
 from sklearn.preprocessing import StandardScaler
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
-ML_MODEL_PATH = ROOT_DIR / "models" / "trained_model.pkl"
-ANN_MODEL_PATH = ROOT_DIR / "models" / "churn_ann.keras"
+MODEL_DIR = next(
+    (
+        directory
+        for directory in (ROOT_DIR / "models", ROOT_DIR / "MODELS")
+        if directory.exists()
+    ),
+    ROOT_DIR / "models",
+)
+ML_MODEL_PATH = MODEL_DIR / "trained_model.pkl"
+ANN_MODEL_PATH = MODEL_DIR / "churn_ann.keras"
 DATASET_PATH = ROOT_DIR / "Data.csv"
 
 app = FastAPI(title="Customer Churn Prediction API")
