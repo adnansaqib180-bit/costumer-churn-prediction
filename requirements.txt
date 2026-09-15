@@ -5,5 +5,5 @@ pandas
 pydantic
 scikit-learn
 streamlit
-tensorflow-cpu
+tensorflow
 uvicorn[standard]
