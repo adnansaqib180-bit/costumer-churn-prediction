@@ -9,7 +9,7 @@ import warnings
 
 warnings.filterwarnings('ignore')
 
-df = pd.read_csv('Data.csv')
+df = pd.read_csv('costumer-churn-prediction/Data.csv')
 
 print(df.head())
 print(df.info())
