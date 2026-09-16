@@ -51,7 +51,7 @@ costumer-churn-prediction/
 │   └── schemas.py           # Shared request/response schemas
 ├── models/
 │   ├── trained_model.pkl    # Serialized scikit-learn pipeline
-│   └── churn_ann.keras      # Trained Keras ANN
+│   └── final_ann.keras      # Trained Keras ANN with built-in Normalization layer
 ├── training/
 │   ├── ML/train_ml.py       # Machine learning training script
 │   └── DL/
@@ -188,7 +188,7 @@ Example response:
 
 The models use customer demographics, tenure, services, contract information, payment method, and billing amounts. The API validates categorical values and normalizes fields such as `TotalCharges` and `SeniorCitizen` before inference.
 
-The machine learning pipeline handles its own preprocessing. The ANN endpoint reconstructs the feature preparation and standardization used during ANN training before making a prediction.
+The machine learning pipeline handles its own preprocessing. The ANN model contains its own Keras `Normalization` layer, so the API only performs categorical feature preparation and passes the resulting features directly to the saved model. It does not need to load the training CSV or fit a second scaler at inference time.
 
 ## Training
 
@@ -203,17 +203,17 @@ python training\DL\test_dl.py
 The resulting model artifacts should be placed in `models/`:
 
 - `models/trained_model.pkl`
-- `models/churn_ann.keras`
+- `models/final_ann.keras`
 
 ## Troubleshooting
 
-### The ANN endpoint cannot load
+### ### The ANN endpoint cannot load
 
-Install the dependencies from `requirements.txt`, especially `tensorflow-cpu`, then restart the API. The ANN model is a Keras artifact and requires a TensorFlow/Keras runtime.
+Install the dependencies from `requirements.txt`, especially `tensorflow-cpu`, then restart the API. The ANN model is a Keras artifact and requires a TensorFlow/Keras runtime. Confirm that `models/final_ann.keras` is included in the deployment.
 
 ### The dashboard cannot find a model
 
-Run the application from the project root so the `models/` directory and `Data.csv` are available:
+Run the application from the project root so the `models/` directory is available:
 
 ```powershell
 cd costumer-churn-prediction

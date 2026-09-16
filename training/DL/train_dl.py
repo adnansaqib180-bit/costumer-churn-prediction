@@ -2,18 +2,17 @@ import pandas as pd
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import keras 
-    from sklearn.metrics import accuracy_score, confusion_matrix, f1_score,precision_score
     from keras import Sequential
     from keras.layers import Dense, Normalization
-    from sklearn.preprocessing import StandardScaler
     # from imblearn.over_sampling import SMOTE 
     import keras_tuner as kt
     from keras.callbacks import EarlyStopping
 
     early_stopping = EarlyStopping(monitor='val_recall', 
                                    patience=5,
-                                   keep_best_weights=True, 
                                    mode='max'  )
+
+
 
 df = pd.read_csv('costumer-churn-prediction/Data.csv')
 
@@ -45,6 +44,7 @@ y = df['Churn']
 from sklearn.model_selection import train_test_split
 x_train,x_test,y_train,y_test = train_test_split(x,y,random_state=42)
 
+class_weight_dict = {0: 0.67, 1: 1.94}
 if __name__ == '__main__':
     print(df.head())
     print(df.info())
@@ -52,6 +52,7 @@ if __name__ == '__main__':
     print(x_test.shape)
     print(y_train.shape)
     print(y_test.shape)
+    print(df['Churn'].value_counts())
 
 
 
@@ -76,7 +77,9 @@ if __name__ == '__main__':
             else:
                 model.add(Dense(units=nodes,activation=activation))
         model.add(Dense(1,activation='sigmoid'))          
-        model.compile(optimizer=optimizer,loss='binary_crossentropy',metrics=[keras.metrics.Recall(name='recall')])
+        model.compile(optimizer=optimizer,
+                      loss='binary_crossentropy',
+                      metrics=[keras.metrics.Recall(name='recall')])
         return model
 
 
@@ -85,7 +88,8 @@ if __name__ == '__main__':
     tuner.search(x_train,
                  y_train,epochs=10,
                  validation_data=(x_test,y_test),
-                 callbacks=[early_stopping]
+                 callbacks=[early_stopping],
+                 class_weight=class_weight_dict
                  )
 
 
@@ -94,7 +98,7 @@ if __name__ == '__main__':
     print(model.summary())
 
 
-    history = model.fit(x_train,y_train,epochs=60,validation_split = .20)
+    history = model.fit(x_train,y_train,epochs=100,validation_split = .20)
 
 
 

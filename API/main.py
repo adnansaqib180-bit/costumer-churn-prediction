@@ -8,7 +8,6 @@ import joblib
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, ConfigDict, field_validator
-from sklearn.preprocessing import StandardScaler
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 MODEL_DIR = next(
@@ -20,8 +19,18 @@ MODEL_DIR = next(
     ROOT_DIR / "models",
 )
 ML_MODEL_PATH = MODEL_DIR / "trained_model.pkl"
-ANN_MODEL_PATH = MODEL_DIR / "churn_ann.keras"
-DATASET_PATH = ROOT_DIR / "Data.csv"
+ANN_MODEL_PATH = next(
+    (
+        model_path
+        for model_path in (
+            MODEL_DIR / "final_ann.keras",
+            MODEL_DIR / "trained_model.keras",
+            MODEL_DIR / "churn_ann.keras",
+        )
+        if model_path.exists()
+    ),
+    MODEL_DIR / "final_ann.keras",
+)
 
 app = FastAPI(title="Customer Churn Prediction API")
 
@@ -109,7 +118,7 @@ def load_ann_model():
         from keras.models import load_model
     except Exception:
         try:
-            from keras.models import load_model
+            from tensorflow.keras.models import load_model
         except Exception as exc:  
             raise RuntimeError("TensorFlow/Keras is not installed. Install it to use the ANN endpoint.") from exc
 
@@ -160,51 +169,6 @@ def _prepare_ann_dataframe(payload: CustomerChurnInput) -> pd.DataFrame:
     return df[expected_columns]
 
 
-@lru_cache(maxsize=1)
-def get_ann_scaler() -> StandardScaler:
-    if not DATASET_PATH.exists():
-        raise FileNotFoundError(f"Training dataset not found at {DATASET_PATH}")
-
-    source = pd.read_csv(DATASET_PATH)
-    source = source.drop(columns=["PaperlessBilling", "customerID", "InternetService", "OnlineSecurity", "OnlineBackup", "DeviceProtection"], errors="ignore")
-    source["gender"] = source["gender"].map({"Male": 1, "Female": 0})
-    source["TotalCharges"] = pd.to_numeric(source["TotalCharges"], errors="coerce")
-    source = source.dropna()
-    source["MultipleLines"] = source["MultipleLines"].map({"No internet service": "No", "No": "No", "Yes": "Yes", "No phone service": "No"})
-    for col in ["Partner", "Dependents", "PhoneService", "MultipleLines"]:
-        source[col] = source[col].map({"Yes": 1, "No": 0})
-    source["Contract"] = source["Contract"].map({"Month-to-month": 0, "One year": 1, "Two year": 2})
-    source = pd.get_dummies(data=source, columns=["PaymentMethod"], drop_first=True, dtype=int)
-    for col in ["TechSupport", "StreamingMovies", "StreamingTV"]:
-        source[col] = source[col].map({"Yes": 1, "No": 0, "No internet service": 0})
-
-    feature_columns = [
-        "gender",
-        "SeniorCitizen",
-        "Partner",
-        "Dependents",
-        "tenure",
-        "PhoneService",
-        "MultipleLines",
-        "TechSupport",
-        "StreamingMovies",
-        "StreamingTV",
-        "Contract",
-        "MonthlyCharges",
-        "TotalCharges",
-        "PaymentMethod_Credit card (automatic)",
-        "PaymentMethod_Electronic check",
-        "PaymentMethod_Mailed check",
-    ]
-    for col in feature_columns:
-        if col not in source.columns:
-            source[col] = 0
-
-    scaler = StandardScaler()
-    scaler.fit(source[feature_columns])
-    return scaler
-
-
 @app.get("/")
 def welcome():
     return {
@@ -239,14 +203,12 @@ def predict_ml(payload: CustomerChurnInput):
 def predict_ann(payload: CustomerChurnInput):
     try:
         model = load_ann_model()
-        scaler = get_ann_scaler()
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Unable to load ANN model: {exc}") from exc
 
     try:
         df = _prepare_ann_dataframe(payload)
-        scaled_features = scaler.transform(df)
-        prediction_probability = float(model.predict(scaled_features, verbose=0).reshape(-1)[0])
+        prediction_probability = float(model.predict(df, verbose=0).reshape(-1)[0])
         prediction = int(prediction_probability >= 0.5)
         label = "Churn" if prediction == 1 else "No Churn"
         return PredictionResponse(prediction=prediction, probability=prediction_probability, label=label, model="deep-learning-ann")
