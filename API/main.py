@@ -106,7 +106,6 @@ def load_ann_model():
         raise FileNotFoundError(f"ANN model not found at {ANN_MODEL_PATH}")
 
     try:
-        import keras
         from keras.models import load_model
     except Exception:
         try:

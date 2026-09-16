@@ -8,8 +8,14 @@ if __name__ == '__main__':
     from sklearn.preprocessing import StandardScaler
     # from imblearn.over_sampling import SMOTE 
     import keras_tuner as kt
+    from keras.callbacks import EarlyStopping
 
-df = pd.read_csv('costumer-churn-prediction/clasic machine learning/Data.csv')
+    early_stopping = EarlyStopping(monitor='val_recall', 
+                                   patience=5,
+                                   keep_best_weights=True, 
+                                   mode='max'  )
+
+df = pd.read_csv('costumer-churn-prediction/Data.csv')
 
 df = df.drop(columns=['PaperlessBilling','customerID','InternetService','OnlineSecurity','OnlineBackup','DeviceProtection'])
 
@@ -37,7 +43,7 @@ y = df['Churn']
 
 
 from sklearn.model_selection import train_test_split
-x,x_test,y_train,y_test = train_test_split(x,y,random_state=42)
+x_train,x_test,y_train,y_test = train_test_split(x,y,random_state=42)
 
 if __name__ == '__main__':
     print(df.head())
@@ -46,9 +52,7 @@ if __name__ == '__main__':
     print(x_test.shape)
     print(y_train.shape)
     print(y_test.shape)
-scaler =  StandardScaler()
-x_train = scaler.fit_transform(x)
-x_test = scaler.transform(x_test)
+
 
 
 # smote = SMOTE()
@@ -58,28 +62,31 @@ x_test = scaler.transform(x_test)
 
 if __name__ == '__main__':
     normalizer = Normalization()
-    normalizer.adapt(x_train)
+    normalizer.adapt(x_train.values)
     def build_model(hp):
         model = Sequential()
         model.add(normalizer)
         nodes = hp.Int('nodes',min_value= 20,max_value=80,step= 8)
         optimizer = hp.Choice('optimizer',values=['Adam','sgd','adagrad','nadam'])
-        loss = hp.Choice('loss',values=['hinge','binary_crossentropy'])
         activation = hp.Choice('activation',values=['tanh','sigmoid','relu','elu'])
-        num_layers = hp.Int('layers',min_value=1,max_value=5)
+        num_layers = hp.Int('layers',min_value=1,max_value=3)
         for i in range (num_layers):
             if i == 0:
                 model.add(Dense(units=nodes,activation=activation,input_shape=(16,)))
             else:
                 model.add(Dense(units=nodes,activation=activation))
         model.add(Dense(1,activation='sigmoid'))          
-        model.compile(optimizer=optimizer,loss=loss,metrics=[keras.metrics.F1Score(threshold=0.4, name='f1_score')])
+        model.compile(optimizer=optimizer,loss='binary_crossentropy',metrics=[keras.metrics.Recall(name='recall')])
         return model
 
 
 
-    tuner = kt.RandomSearch(build_model,objective='val_f1_score',max_trials=10)
-    tuner.search(x_train,y_train,epochs=10,validation_data=(x_test,y_test))
+    tuner = kt.RandomSearch(build_model,objective='val_recall',max_trials=10)
+    tuner.search(x_train,
+                 y_train,epochs=10,
+                 validation_data=(x_test,y_test),
+                 callbacks=[early_stopping]
+                 )
 
 
     print(tuner.get_best_hyperparameters()[0].values)
@@ -87,7 +94,7 @@ if __name__ == '__main__':
     print(model.summary())
 
 
-    history = model.fit(x_train,y_train,epochs=500,validation_split = .20)
+    history = model.fit(x_train,y_train,epochs=60,validation_split = .20)
 
 
 
@@ -102,10 +109,10 @@ if __name__ == '__main__':
 
 
     plt.subplot(1, 2, 2)
-    plt.plot(history.history["f1_score"], label="Train Accuracy")
-    plt.plot(history.history["val_f1_score"], label="Validation Accuracy")
-    plt.title("Model Accuracy")
-    plt.ylabel("f1_score")
+    plt.plot(history.history["recall"], label="Train Recall")
+    plt.plot(history.history["val_recall"], label="Validation Recall")
+    plt.title("Model Recall")
+    plt.ylabel("Recall")
     plt.xlabel("Epoch")
     plt.legend()
 
@@ -115,5 +122,5 @@ if __name__ == '__main__':
 
     #saving the model
 
-    model.save('churn_ann.keras')
+    model.save('final_ann.keras')
     print('model saved')
