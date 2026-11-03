@@ -15,9 +15,10 @@ if __name__ == '__main__':
 
 
 data = pd.read_csv('costumer-churn-prediction/Data.csv')
-
-data = data.drop(columns=['PaperlessBilling','customerID','InternetService','OnlineSecurity','OnlineBackup','DeviceProtection'])
-
+def drop_extra(df : pd.DataFrame):
+    data = df.drop(columns=['PaperlessBilling','customerID','InternetService','OnlineSecurity','OnlineBackup','DeviceProtection'])
+    return data
+data = drop_extra(data)
 import pandas as pd
 
 
