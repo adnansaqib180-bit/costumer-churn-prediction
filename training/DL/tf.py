@@ -14,29 +14,49 @@ if __name__ == '__main__':
 
 
 
-df = pd.read_csv('costumer-churn-prediction/Data.csv')
+data = pd.read_csv('costumer-churn-prediction/Data.csv')
 
-df = df.drop(columns=['PaperlessBilling','customerID','InternetService','OnlineSecurity','OnlineBackup','DeviceProtection'])
+data = data.drop(columns=['PaperlessBilling','customerID','InternetService','OnlineSecurity','OnlineBackup','DeviceProtection'])
 
-df['gender'] = df['gender'].map({'Male':1,'Female':0})
-df['TotalCharges'] = pd.to_numeric(df['TotalCharges'], errors='coerce')
-df = df.dropna()
+import pandas as pd
 
 
-df['MultipleLines'] = df['MultipleLines'].map({'No internet service': 'No','No':'No','Yes':'Yes','No phone service':'No'})
-yes_no_columns = ['Partner','Dependents','PhoneService','MultipleLines']
-for col in yes_no_columns:
-    df[col] = df[col].map({'Yes':1,'No':0})
+def preprocess_churn_data(df : pd.DataFrame):
+  df = df.copy()
 
+  df['gender'] = df['gender'].map({'Male': 1, 'Female': 0})
 
-df['Contract'] = df['Contract'].map({'Month-to-month':0,'One year':1,'Two year':2})
-df['Churn'] = df['Churn'].map({'Yes':1,'No':0})
+  df['TotalCharges'] = pd.to_numeric(df['TotalCharges'], errors='coerce')
+  df = df.dropna()
 
+  df['MultipleLines'] = df['MultipleLines'].map(
+      {
+          'No internet service': 'No',
+          'No': 'No',
+          'Yes': 'Yes',
+          'No phone service': 'No',
+      }
+  )
 
-df = pd.get_dummies(data=df,columns=['PaymentMethod'],drop_first=True,dtype=int)  
-same_columns = ['TechSupport','StreamingMovies','StreamingTV']
-for col in same_columns:
-    df[col] = df[col].map({'Yes':1,'No':0,'No internet service':0})
+  yes_no_columns = ['Partner', 'Dependents', 'PhoneService', 'MultipleLines']
+  for col in yes_no_columns:
+    df[col] = df[col].map({'Yes': 1, 'No': 0})
+
+  df['Contract'] = df['Contract'].map(
+      {'Month-to-month': 0, 'One year': 1, 'Two year': 2}
+  )
+  df['Churn'] = df['Churn'].map({'Yes': 1, 'No': 0})
+
+  df = pd.get_dummies(
+      data=df, columns=['PaymentMethod'], drop_first=True, dtype=int
+  )
+
+  same_columns = ['TechSupport', 'StreamingMovies', 'StreamingTV']
+  for col in same_columns:
+    df[col] = df[col].map({'Yes': 1, 'No': 0, 'No internet service': 0})
+
+  return df
+df = preprocess_churn_data(df=data)
 x = df.drop(columns= ['Churn'])
 y = df['Churn']
 
@@ -62,6 +82,7 @@ if __name__ == '__main__':
 #  =============== due to not good result i did'nt keep smote =========
 
 if __name__ == '__main__':
+    print(x_train.dtypes)
     normalizer = Normalization()
     normalizer.adapt(x_train.values)
     def build_model(hp):
